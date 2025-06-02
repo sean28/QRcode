@@ -8,4 +8,3 @@ Key Features:
 	•	📥 Download the QR code as a PNG image
 	•	🎨 Modern and responsive UI design
 
-Perfect for personal projects, websites, and educational purposes!
