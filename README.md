@@ -7,7 +7,7 @@ Click <a href="https://sean28.github.io/QRcode/">here</a> to use the tool.
 
 ## 🔗 URL Direct Download
 
-A lightweight, browser-based utility to fetch files from any direct URL with an optional custom filename, live progress indicator.Click <a href="https://sean28.github.io/js-download/">here</a> to use the tool.
+A lightweight, browser-based utility to fetch files from any direct URL with an optional custom filename, live progress indicator. Click <a href="https://sean28.github.io/js-download/">here</a> to use the tool.
 
 
 ## 🎬 Online TV
