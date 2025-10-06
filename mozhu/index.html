@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2b180e">
+    <meta charset="utf-8" />
+    <meta http-equiv="Cache-Control" content="no-cache" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="user-scalable=no, width=device-width">
+    <meta name="referrer" content="no-referrer" />
+    <title>魔珠</title>
+    <meta name="description" content="经典的连珠消除游戏，风靡全球20年！单机、联网都能玩！" />
+    <meta name="keywords" content="魔珠,消除游戏" />
+    <link href="./css/normalize.css" rel="stylesheet" />
+    <link href="./css/style.css" rel="stylesheet" />
+    <link rel="apple-touch-icon" href="./imgs/mozhu.png" />
+</head>
+
+<body>
+    <script>
+        if (navigator.userAgent.indexOf("/night/") !== -1) {
+            document.getElementsByTagName("body")[0].classList.add("night");
+        }
+    </script>
+    <div id="app" v-cloak>
+        <div class="start" v-bind:style="'height:' + windowHeight + 'px'">
+            <img class="logo" src="./imgs/maintitle_chs.png"
+                />
+            <div v-on:click="newGame(true)" v-bind:class="'main-btn new '" @touchstart="touchStart('new')"
+                @touchend="touchEnd('new')">新游戏</div>
+            <div v-if="canContinue" v-on:click="continueGame()" v-bind:class="'main-btn continue '"
+                @touchstart="touchStart('continue')" @touchend="touchEnd('continue')">继续游戏</div>
+            <div v-on:click="showRank()" v-bind:class="'main-btn rank '" @touchstart="touchStart('rank')"
+                @touchend="touchEnd('rank')">排行榜</div>
+            <div v-on:click="openSettings()" v-bind:class="'main-btn setting '" @touchstart="touchStart('setting')"
+                @touchend="touchEnd('setting')">设置</div>
+        </div>
+        <div class="settings" v-bind:style="'height:' + windowHeight + 'px'">
+            <div class="setting-title">设置
+            </div>
+            <div class="setting-item"><span class="setting-des">操作音效：</span><span
+                    v-bind:class="'setting-value switch ' + (soundClosed ? 'disable':'')"
+                    v-on:click="switchSound()"></span></div>
+            <div class="setting-item"><span class="setting-des">背景音乐：</span><span
+                    v-bind:class="'setting-value switch ' + (bgPaused ? 'disable':'')" v-on:click="switchBg()"></span>
+            </div>
+            <div class="setting-item"><span class="setting-des">显示数字球：</span><span
+                v-bind:class="'setting-value switch ' + (!srMode ? 'disable':'')" v-on:click="switchSR()"></span>
+        </div>
+            <div class="setting-item"><span class="setting-des">版本：</span><span class="setting-value">v1.0</span></div>
+
+            <div class="exit-setting" v-on:click="exitSettings()"><img src="./imgs/back_chs.png" src="" /></div>
+        </div>
+        <div class="pannel" v-bind:class="srMode ? 'sr-mode':''">
+            <div class="header-pannel"
+                v-bind:style="'margin-top:' + (marginTop ? marginTop : (statusBarHeight + titleBarHeight + 20)) + 'px'">
+                <img v-if="inited" class="headboard" src="./imgs/scoretable.png" src="" />
+
+                <div class="header-pannel-inner">
+                    <div class="user-pannel">
+                        <img class="avatar" v-on:click="login()" v-if="inited"
+                            v-bind:src="user  ? user.avatarurl :'./imgs/local.png'" />
+                        <span class="nick" v-on:click="login()">{{user  ?user.nickname:'登录'}}</span>
+                        <span class="placeholder"></span>
+                        <span class="wroldScore" v-on:click="showRank()">{{scoreRank.A}}</span>
+                    </div>
+                    <div class="score-pannel">
+                        <div class="score">
+                            <span>当前：</span>
+                            <span class="value current">{{score}}</span>
+                            <span>最高：</span>
+                            <span class="value most">{{scoreRank.P}}</span>
+                        </div>
+                        <div class="setting-btns">
+                            <div class="btn helper" @touchstart="touchStart('helper')" @touchend="touchEnd('helper')"
+                                v-on:click="openHelp()"></div>
+                            <div v-on:click="switchBg()" v-bind:class="'btn sound ' + (bgPaused ? 'disable':'')"
+                                @touchstart="touchStart('sound')" @touchend="touchEnd('sound')"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div v-bind:class="'cell-pannel '">
+                <img v-if="inited" class="chessboard" src="./imgs/chessboard.png" src="" />
+                <div class="cells-list">
+                    <div v-bind:class="'cell-item ' + (cell.isPath ? 'path':'')" v-on:click.stop="clickCell(index)"
+                        v-for="(cell, index) in cells">
+                    </div>
+                </div>
+                <div class="balls-list">
+                    <div v-bind:class="'ball-item ' + ball.name + (ball.waitDelete ? ' wait-delete ':' ') + (ball.selected ? ' selected ':' ') + 'ball-item-' + index "
+                        v-bind:style="ball.style" v-for="(ball, index) in balls">
+                        <div class="ball-circle"></div>
+                    </div>
+                </div>
+                <div class="ball-preview">
+                    <div v-bind:class="'ball-item ' + ball.name" v-for="(ball, index) in nextBallGroup"
+                        v-bind:style="'width:' + ballWidth + 'px;height:' + ballWidth + 'px'">
+                        <div class="ball-circle"></div>
+                    </div>
+                </div>
+                <div class="return" v-on:click="returnStart()"><img v-if="inited" src="./imgs/back_chs.png" src="" />
+                </div>
+                <div class="replay" v-on:click="replayGame()"><img v-if="inited" src="./imgs/replay_chs.png" src="" />
+                </div>
+                <span class="plusSocreTip">+10</span>
+            </div>
+        </div>
+        <div v-bind:class="'modal normal-modal ' + (modalShow ? 'show':'')"
+            v-bind:style="'height:' + windowHeight + 'px'">
+            <div class="modal-inner">
+                <div class="modal-content">游戏规则：</div>
+                <div class="modal-btns">
+                    <span class="modal-btn modal-cancel" v-on:click="_cancelModal()"
+                        @touchstart="touchStart('modal-cancel')" @touchend="touchEnd('modal-cancel')">取消</span>
+                    <span class="modal-btn modal-confirm" v-on:click="_confirmModal()"
+                        @touchstart="touchStart('modal-confirm')" @touchend="touchEnd('modal-confirm')">确定</span>
+                </div>
+            </div>
+        </div>
+        <div v-bind:class="'modal congrat-modal ' + (shareShow ? 'show':'')"
+            v-bind:style="'height:' + windowHeight + 'px'">
+            <div class="modal-inner" v-bind:style="'height:' + (windowWidth * 0.72778) + 'px'">
+                <img class="share-title" src="./imgs/sharetitle_chs.png" />
+                <span class="share-score-text">
+                    <span class="share-score"><span class="share-score-value">**</span>分</span>
+                    <span class="share-des">再接再厉</span>
+                </span>
+                <span class="close-btn" v-on:click="closeSahre()"></span>
+                <div class="share-btns" v-bind:style="'bottom:-' + (windowWidth * 0.15) + 'px'">
+                    <img src="./imgs/weixin_normal.png" v-on:click="share('weixin')" />
+                    <img src="./imgs/pengyou_normal.png" v-on:click="share('wxcircle')" />
+                    <img src="./imgs/qq_normal.png" v-on:click="share('qq')" />
+                    <img src="./imgs/sina_normal.png" v-on:click="share('weibo')" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <audio id="player-bg" src="./sound/bg.mp3" loop="loop"></audio>
+    <audio id="player-move" src="./sound/move.mp3"></audio>
+    <audio id="player-bomb" src="./sound/bomb.wav"></audio>
+    <audio id="player-great" src="./sound/congratulation.wav"></audio>
+    <audio id="player-over" src="./sound/gameover.wav"></audio>
+    <audio id="player-select" src="./sound/select.mp3"></audio>
+    <audio id="player-button" src="./sound/button.wav"></audio>
+    <script src="./vue/vue.min.js"></script>
+    <script>(window.Vue || document.write("<script src='https:\/\/img.ruanmei.com\/btd\/cdn\/expire-1-M\/vue\/2.6.10\/vue.min.js?v=202001101661'><\/script>"));</script>
+    <script src="./common/xml.js"></script>
+    <script src="./js/rm-js-sdk.min.js"></script>
+    <script src="./js/jweixin-1.4.0.js"></script>
+    <script src="./js/howler.min.js"></script>
+    <script src="./js/main.js"></script>
+</body>
+<script>
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("./sw.js").then(() => {
+            console.log("Service Worker 注册成功");
+        });
+    }
+</script>
+
+</html>
